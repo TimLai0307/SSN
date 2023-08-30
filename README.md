@@ -39,6 +39,7 @@ cls = 'For which dataset' # Ex. SHHA, NWPU, UCF_QNRF, UCF_CC_50
 
 Run generate_density.py in data_preprocess to generate ground-truth density map
 
+
 Please put the image and ground-truth in the same folder
 ```python
 
@@ -54,6 +55,14 @@ Data_root/
  ⋮
 
 ```
+
+Run the data_pair.py to generate data_list
+```python
+
+python data_preprocess/data_pair.py
+
+```
+
 
 **You can refer to our example.txt in the txt path**
 
