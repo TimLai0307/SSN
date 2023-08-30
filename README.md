@@ -18,10 +18,10 @@ pip install -r requirements.txt
 # How to try
 
 ## Download dataset (Places365、CelebA、ImageNet)
-[Places365](http://Places365.csail.mit.edu/)  
-[CelebA](https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html)  
-[FFHQ](https://drive.google.com/drive/folders/1u2xu7bSrWxrbUxk-dT-UvEJq8IjdmNTP)
-[Paris Street View](https://github.com/pathak22/context-encoder/issues/24) (Non-publicise, please ask the paper author)
+[ShanghaiTech](https://www.kaggle.com/datasets/tthien/shanghaitech)  (no official)
+[UCF_CC_50](https://www.crcv.ucf.edu/data/ucf-cc-50/)  
+[UCF_QNRF](https://www.crcv.ucf.edu/data/ucf-qnrf/)
+[NWPU](https://gjy3035.github.io/NWPU-Crowd-Sample-Code/) 
 
 ## Set dataset path
 
