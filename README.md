@@ -5,13 +5,15 @@ Crowd counting is an important cornerstone in the tasks related to crowd analysi
 <img src="https://i.imgur.com/LBIfNME.png" alt="https://i.imgur.com/LBIfNME.png" title="https://i.imgur.com/LBIfNME.png" width="1312" height="350">
 
 # Environment
-- Python 3.7.0
-- pytorch
-- opencv
-- PIL  
-- colorama
+- Python 3.8
+- pytorch 1.12.1
 
-or see the requirements.txt
+Please run the follow line to install enviroment
+```python
+
+pip install -r requirements.txt
+
+```
 
 # How to try
 
