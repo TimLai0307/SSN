@@ -86,7 +86,7 @@ python test.py --weight_path 'checkpoint_path'
 
 <img src="https://github.com/TimLai0307/SSN/blob/main/vis/comparison.png" width="1337" height="449">
 
-Quantitative evaluation of inpainting on Places365 dataset. We report Peak signal-to-noise ratio (PSNR), structural similarity (SSIM), Learned Perceptual Image Patch Similarity (LPIPS) and Frechet Inception ´ Distance (FID) metrics. The ▲ denotes larger, and ▼ denotes lesser of the parameters compared to our proposed model. (Bold means the 1st best; Underline means the 2nd best; † means higher is better; ¶ means lower is better)
+Quantitative evaluation on four dataset. We report Mean Abosolute Error (MAE), Root Mean Square Error (RMSE). (Bold means the 1st best; Underline means the 2nd best).
 
 
 ## Qualitative comparisons
@@ -95,7 +95,7 @@ Quantitative evaluation of inpainting on Places365 dataset. We report Peak signa
 
 <img src="https://github.com/TimLai0307/SSN/blob/main/vis/visual.png" width="1279" height="503">
 
-The generated image comparison of our method and all SOTA methods on Places365 dataset. From left to right are ground truth image, input image, CA, RW, DeepFill-V2, HiFill, Iconv, CRFill, AOT-GAN, TFill, SWMHT-Net, FcF, ESWT-Net.
+The generated density map comparison of our method and some other methods on ShanghaiTech PartA dataset. From left to right are input image, ground truth, MCNN, CSRnet, CAN, BL, DM-count, Ours.
 
 
 ## Ablation study
@@ -106,20 +106,7 @@ The generated image comparison of our method and all SOTA methods on Places365 d
 <img src="https://github.com/TimLai0307/SSN/blob/main/vis/ablation.png" width="546" height="195">
 </div>
 
-Ablation study of all modual we used with size 256×256 images on Places365 dataset. We report Peak signal-to-noise ratio (PSNR), structural similarity (SSIM). (Bold means the 1st best; Underline means the 2nd best; † means higher is better; V means included module; V∗ means included module and get results from this stage.)
+Ablation study of all modual we used with size 128x128 images on ShanghaiTech PartA dataset. We report Mean Abosolute Error (MAE), Root Mean Square Error (RMSE). (Bold means the 1st best; Underline means the 2nd best)
 
-
-## Acknowledgement
-This repository utilizes the codes of following impressive repositories   
-- [ZITS](https://github.com/DQiaole/ZITS_inpainting)
-- [LaMa](https://github.com/saic-mdal/lama)
-- [CSWin Transformer](https://github.com/microsoft/CSWin-Transformer)
-- [Vision Transformer](https://github.com/google-research/vision_transformer)
-- [SWMHT-Net](https://github.com/bobo0303/LIGHTWEIGHT-IMAGE-INPAINTING-BY-STRIPE-WINDOW-TRANSFORMER-WITH-JOINT-ATTENTION-TO-CNN)
-- [MSCSWT-Net](https://github.com/bobo0303/MSCSWT-Net)
-
----
-## Contact
-If you have any question, feel free to contact wiwi61666166@gmail.com
 
 
