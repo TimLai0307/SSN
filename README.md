@@ -93,7 +93,7 @@ Quantitative evaluation on four dataset. We report Mean Abosolute Error (MAE), R
 
 - Visualize
 
-<img src="https://github.com/TimLai0307/SSN/blob/main/vis/visual.png" width="1279" height="503">
+<img src="https://github.com/TimLai0307/SSN/blob/main/vis/visual.png" width="1279" height="400">
 
 The generated density map comparison of our method and some other methods on ShanghaiTech PartA dataset. From left to right are input image, ground truth, MCNN, CSRnet, CAN, BL, DM-count, and Ours.
 
