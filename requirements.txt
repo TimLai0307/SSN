@@ -1,0 +1,12 @@
+h5py==2.10.0
+image==1.5.33
+matplotlib==3.6.1
+numpy==1.23.3
+opencv_python==4.6.0.66
+pandas==1.5.1
+Pillow==9.2.0
+scipy==1.10.0
+tensorboardX==2.5.1
+torch==1.12.1
+torchvision==0.13.1
+tqdm==4.64.1
