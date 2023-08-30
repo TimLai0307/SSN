@@ -19,11 +19,8 @@ pip install -r requirements.txt
 
 ## Download dataset (Places365、CelebA、ImageNet)
 [ShanghaiTech](https://www.kaggle.com/datasets/tthien/shanghaitech)  (no official)
-
 [UCF_CC_50](https://www.crcv.ucf.edu/data/ucf-cc-50/)
-
 [UCF_QNRF](https://www.crcv.ucf.edu/data/ucf-qnrf/)
-
 [NWPU](https://gjy3035.github.io/NWPU-Crowd-Sample-Code/)
 
 ## Set dataset path
