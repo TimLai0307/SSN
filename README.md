@@ -2,7 +2,7 @@
 
 Crowd counting is an important cornerstone in the tasks related to crowd analysis. In recent years, an increasing number of deep learning methods have been proposed in the field of image processing and achieved amazing results. However, there are some challenges need to be solved in the current crowd counting task: large-scale variations in scale and interference from the background. Both of them will lead to poor prediction results. Therefore, we propose a scale selection module to deal the scale variation problem in images. And for background interference, we proposed an attention module to reduce the interference of background information. Moreover, we evaluated our model on four commonly used datasets and compared the performance with other state of-the-art methods to demonstrate the competitiveness of our approach.
 
-<img src="https://github.com/TimLai0307/SSN/blob/main/vis/architecture.png" alt="https://github.com/TimLai0307/SSN/blob/main/vis/architecture.png" title="https://github.com/TimLai0307/SSN/blob/main/vis/architecture.png" width="1395" height="655">
+<img src="https://github.com/TimLai0307/SSN/blob/main/vis/architecture.png" alt="https://github.com/TimLai0307/SSN/blob/main/vis/architecture.png" title="https://github.com/TimLai0307/SSN/blob/main/vis/architecture.png" width="698" height="328">
 
 # Environment
 - Python 3.8
