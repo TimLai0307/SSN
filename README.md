@@ -19,32 +19,38 @@ pip install -r requirements.txt
 
 ## Download dataset (Places365、CelebA、ImageNet)
 [ShanghaiTech](https://www.kaggle.com/datasets/tthien/shanghaitech)  (no official)
+
 [UCF_CC_50](https://www.crcv.ucf.edu/data/ucf-cc-50/)
+
 [UCF_QNRF](https://www.crcv.ucf.edu/data/ucf-qnrf/)
+
 [NWPU](https://gjy3035.github.io/NWPU-Crowd-Sample-Code/)
 
-## Set dataset path
+## Data preprocess
 
-Edit txt/xxx.txt (set path in config)
+Edit the root and cls in generate_density.py
 ```python
 
-data_path = './txt/train_path.txt'
-mask_path = './txt/train_mask_path.txt'
-val_path = './txt/val_path.txt'
-val_mask_path = './val_mask_file/' # path
-test_path: './txt/test_path.txt'
-test_mask_1_60_path: './test_mask_1+10_file/' # path
+root = 'The root of image'
+target_root = 'The root of saving generate ground-truth'
+cls = 'For which dataset' # Ex. SHHA, NWPU, UCF_QNRF, UCF_CC_50
 
 ```
 
-txt example
+Run generate_density.py in data_preprocess to generate ground-truth density map
+
+Please put the image and ground-truth in the same folder
 ```python
 
-E:/Places365/data_256/00000001.jpg
-E:/Places365/data_256/00000002.jpg
-E:/Places365/data_256/00000003.jpg
-E:/Places365/data_256/00000004.jpg
-E:/Places365/data_256/00000005.jpg
+Data_root/
+         -train/
+               -IMG_1.h5
+               -IMG_1.jpg
+               ⋮
+         -test/
+               -IMG_1.h5
+               -IMG_1.jpg
+               ⋮
  ⋮
 
 ```
