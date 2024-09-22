@@ -25,8 +25,8 @@ model_urls = {
 
 
 model_paths = {
-    'vgg16_bn': 'D:/Lai/counting/CrowdCounting-P2PNet-main/apdcephfs/private_changanwang/checkpoints/vgg16_bn-6c64b313.pth',
-    'vgg16': '/apdcephfs/private_changanwang/checkpoints/vgg16-397923af.pth'
+    'vgg16_bn': './backbone_pretrain/vgg16_bn-6c64b313.pth',
+    'vgg16': './backbone_pretrain/vgg16-397923af.pth'
     ,
 
 }
@@ -34,12 +34,12 @@ model_paths = {
 
 class VGG(nn.Module):
 
-    def __init__(self, features, num_classes=1000, init_weights=True): #feature前面conv輸出
+    def __init__(self, features, num_classes=1000, init_weights=True):
         super(VGG, self).__init__()
         self.features = features
-        self.avgpool = nn.AdaptiveAvgPool2d((7, 7)) # avgpooling
-        self.classifier = nn.Sequential(  #全連接層
-            nn.Linear(512 * 7 * 7, 4096), # nn.linear(in_feature,out_feature)
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, 4096),
@@ -73,12 +73,12 @@ class VGG(nn.Module):
 
 def make_layers(cfg, batch_norm=False, sync=False):
     layers = []
-    in_channels = 3 #channel數
-    for v in cfg: # cfg: vgg各層數
-        if v == 'M': #maxpooling
+    in_channels = 3
+    for v in cfg:
+        if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
         else:
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1) #conv的參數 conv2d(channel, 輸出feature map數, kernel size, stride步伐, padding補0)
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             if batch_norm:
                 if sync:
                     print('use sync backbone')
@@ -88,7 +88,7 @@ def make_layers(cfg, batch_norm=False, sync=False):
             else:
                 layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v
-    return nn.Sequential(*layers) #nn.sequence將上述所有層在計算階段依序執行
+    return nn.Sequential(*layers)
 
 
 cfgs = {
@@ -102,8 +102,8 @@ cfgs = {
 def _vgg(arch, cfg, batch_norm, pretrained, progress, sync=False, **kwargs):
     if pretrained:
         kwargs['init_weights'] = False
-    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm, sync=sync), **kwargs) #vgg架構
-    if pretrained: #讀pretrain vgg
+    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm, sync=sync), **kwargs)
+    if pretrained:
         state_dict = torch.load(model_paths[arch])
         model.load_state_dict(state_dict)
     return model

@@ -2,53 +2,49 @@ import argparse
 import datetime
 import random
 import time
-from pathlib import Path
-
+# import thop
 import torch
 from torch.utils.data import DataLoader, DistributedSampler
 
-from datasets.loading_data import building_data
+# from crowd_datasets import build_dataset
+from crowd_datasets.loading_data import get_data
 from engine import *
-from models.SSN import build_model
+from models import build_model
 import os
 from tensorboardX import SummaryWriter
 import warnings
 warnings.filterwarnings('ignore')
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('Set parameters for training P2PNet', add_help=False)
+    parser = argparse.ArgumentParser('Set parameters for training', add_help=False)
     parser.add_argument('--lr', default=1e-5, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
-    parser.add_argument('--batch_size', default=4, type=int)
-    parser.add_argument('--weight_decay', default=1e-4, type=float)
-    parser.add_argument('--epochs', default=4000, type=int)
-    parser.add_argument('--lr_drop', default=10000, type=int)
+    parser.add_argument('--batch_size', default=12, type=int)
+    parser.add_argument('--epochs', default=6000, type=int)
+    parser.add_argument('--lr_drop', default=1000, type=int)
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
 
-    # Backbone
-    parser.add_argument('--backbone', default='vgg16_bn', type=str,
-                        help="Name of the convolutional backbone to use")
-
+    # Model parameters
     parser.add_argument('--frozen_weights', type=str, default=None,
                         help="Path to the pretrained model. If set, only the mask head will be trained")
 
-    parser.add_argument('--backbone_path', default='', type=str,
-                        help="Root of the backbone checkpoint")
+    # * Backbone
+    parser.add_argument('--backbone', default='vgg16_bn', type=str,
+                        help="Name of the convolutional backbone to use")
 
     # dataset parameters
     parser.add_argument('--data_root', default='D:/Lai/counting_dataset/test/adaptive_kernel/SHHA',
                         help='path where the dataset is')
-
-    # save_dir
-    parser.add_argument('--log_dir', default='./log',
+    
+    parser.add_argument('--output_dir', default='./log',
                         help='path where to save, empty for no saving')
     parser.add_argument('--checkpoints_dir', default='./ckpt',
                         help='path where to save checkpoints, empty for no saving')
-    parser.add_argument('--tensorboard_dir', default='./runs',
+    parser.add_argument('--tensorboard_dir', default='./tensorboard',
                         help='path where to save, empty for no saving')
 
-    parser.add_argument('--seed', default=0, type=int)
+    parser.add_argument('--seed', default=42, type=int)
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=1, type=int, metavar='N',
                         help='start epoch')
@@ -60,15 +56,15 @@ def get_args_parser():
 
     return parser
 
-def main(args): #主程式
+def main(args):
     os.environ["CUDA_VISIBLE_DEVICES"] = '{}'.format(args.gpu_id)
-
     # create the logging file
-    if not os.path.isdir(args.log_dir):
-        os.mkdir(args.log_dir)
-    run_log_name = os.path.join(args.log_dir, 'run_log.txt')
+    run_log_name = os.path.join(args.output_dir, 'run_log.txt')
     with open(run_log_name, "w") as log_file:
         log_file.write('Eval Log %s\n' % time.strftime("%c"))
+
+    if args.frozen_weights is not None:
+        assert args.masks, "Frozen training is meant for segmentation only"
 
     # backup the arguments
     print(args)
@@ -76,17 +72,18 @@ def main(args): #主程式
         log_file.write("{}".format(args))
     device = torch.device('cuda')
     # fix the seed for reproducibility
-    seed = args.seed
+    seed = args.seed + utils.get_rank()
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
-    # get model
+    # get the counting model
     model, criterion = build_model(args, training=True)
     # move to GPU
     model.to(device)
     criterion.to(device)
 
     model_without_ddp = model
+
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
@@ -98,11 +95,19 @@ def main(args): #主程式
             "lr": args.lr_backbone,
         },
     ]
-    # Adam is used by default
-    optimizer = torch.optim.Adam(param_dicts, lr=args.lr)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop)
+
+    if args.resume:
+        lr = args.lr * (0.95 ** (args.start_epoch//args.lr_drop))
+    else:
+        lr = args.lr
+
+    # Optimizer is using Adam by default
+    optimizer = torch.optim.Adam(param_dicts, lr=lr)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop, gamma=0.95)
+
+    # create the dataset
     # create the training and valiation set
-    train_set, val_set = building_data(args.data_root)
+    train_set, val_set = get_data(args.data_root)
     # create the sampler used during training
     sampler_train = torch.utils.data.RandomSampler(train_set)
     sampler_val = torch.utils.data.SequentialSampler(val_set)
@@ -116,7 +121,7 @@ def main(args): #主程式
     data_loader_val = DataLoader(val_set, batch_size=1, sampler=sampler_val,
                                     drop_last=False, collate_fn=utils.collate_fn_crowd, num_workers=args.num_workers)
 
-    if args.frozen_weights is not None:  # 讀pretrain
+    if args.frozen_weights is not None:
         checkpoint = torch.load(args.frozen_weights, map_location='cpu')
         model_without_ddp.detr.load_state_dict(checkpoint['model'])
     # resume the weights and training state if exists
@@ -124,31 +129,35 @@ def main(args): #主程式
         checkpoint = torch.load(args.resume, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint['model'])
         args.start_epoch = checkpoint['epoch'] + 1
+        if not args.eval and 'optimizer' in checkpoint and 'lr_scheduler' in checkpoint and 'epoch' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+            args.start_epoch = checkpoint['epoch'] + 1
 
 
-    # 開始訓練
-    print("'=======================================Train======================================='")
+    # Start training
+    print("Start training")
     start_time = time.time()
     # save the performance during the training
     mae = []
     mse = []
-    step = args.start_epoch // args.eval_freq + 1
+
     # the logger writer
     writer = SummaryWriter(args.tensorboard_dir)
-
+    
+    step = args.start_epoch // args.eval_freq + 1
     # training starts here
     for epoch in range(args.start_epoch, args.epochs+1):
-
         t1 = time.time()
         stat = train_one_epoch(
             model, criterion, data_loader_train, optimizer, device, epoch,
             args.clip_max_norm)
 
+
         # record the training states after every epoch
         if writer is not None:
             with open(run_log_name, "a") as log_file:
-                log_file.write("loss/loss@{}: {} \n".format(epoch, stat['loss']))
-
+                log_file.write("loss/loss@{}: {}".format(epoch, stat['loss']))
             writer.add_scalar('loss/loss', stat['loss'], epoch)
 
 
@@ -160,8 +169,6 @@ def main(args): #主程式
         # change lr according to the scheduler
         lr_scheduler.step()
         # save latest weights every epoch
-        if not os.path.isdir(args.checkpoints_dir):
-            os.mkdir(args.checkpoints_dir)
         checkpoint_latest_path = os.path.join(args.checkpoints_dir, 'latest.pth')
         torch.save({
             'model': model_without_ddp.state_dict(),
@@ -175,20 +182,25 @@ def main(args): #主程式
 
             mae.append(result[0])
             mse.append(result[1])
-            # print the evaluation results
-            print('=======================================Test=======================================')
-            print("mae:", result[0], "mse:", result[1], "time:", t2 - t1, "best mae:", np.min(mae), )
+
+
+            print('=======================================test=======================================')
+
+            print("mae:", result[0], "mse:", result[1], "time:", t2 - t1, "best mae:", np.min(mae),)
             with open(run_log_name, "a") as log_file:
-                log_file.write("mae:{}, mse:{}, time:{}, best mae:{} \n".format(result[0],
+                log_file.write("mae:{}, mse:{}, time:{}, best mae".format(result[0],
                                 result[1], t2 - t1, np.min(mae)))
-            print('=======================================Test=======================================')
+
+            print('=======================================test=======================================')
             # recored the evaluation results
             if writer is not None:
                 with open(run_log_name, "a") as log_file:
-                    log_file.write("metric/mae@{}: {} \n".format(step, result[0]))
-                    log_file.write("metric/mse@{}: {} \n".format(step, result[1]))
+                    log_file.write("metric/mae@{}: {}".format(step, result[0]))
+                    log_file.write("metric/mse@{}: {}".format(step, result[1]))
+
                 writer.add_scalar('metric/mae', result[0], step)
                 writer.add_scalar('metric/mse', result[1], step)
+
                 step += 1
 
             # save the best model since begining
@@ -196,14 +208,16 @@ def main(args): #主程式
                 checkpoint_best_path = os.path.join(args.checkpoints_dir, 'best_mae.pth')
                 torch.save({
                     'model': model_without_ddp.state_dict(),
-                    'epoch': epoch,
+                    'epoch': epoch
                 }, checkpoint_best_path)
+
+
     # total time for training
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
 
 if __name__ == '__main__':
-    args = get_args_parser()
-    opt = args.parse_args()
-    main(opt)
+    parser = argparse.ArgumentParser('Training and evaluation script', parents=[get_args_parser()])
+    args = parser.parse_args()
+    main(args)

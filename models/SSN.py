@@ -57,8 +57,6 @@ class Scale_selection(nn.Module):
         weights = [self.__make_weight(feats,scale_feature) for scale_feature in multi_scales]
         overall_features = torch.cat((multi_scales[0], multi_scales[1], multi_scales[2]), 1)
         overall_weight = self.softmax(torch.cat((weights[0], weights[1], weights[2]), 1))
-        # overall_features = torch.cat((multi_scales[0], multi_scales[1], multi_scales[2], multi_scales[3]), 1)
-        # overall_weight = self.softmax(torch.cat((weights[0], weights[1], weights[2], weights[3]), 1))
         output_features = overall_features * overall_weight
         bottles = self.bottleneck(torch.cat((output_features, feats), 1))
         return self.relu(bottles)
@@ -76,12 +74,11 @@ class Attention_Module(nn.Module):
         return self.sigmoid(x)
 
 
-# the defenition of the P2PNet model
 class Network(nn.Module):
-    def __init__(self, backbone, row=2, line=2):
+    def __init__(self, backbone):
         super().__init__()
         self.backbone = backbone
-        self.context = Scale_selection(512, 512)
+        self.ssn = Scale_selection(512, 512)
         self.output_layer = nn.Conv2d(64, 1, kernel_size=1)
         self.backend_feat = ['U', 512, 512, 'U', 256, 'U', 128, 'U', 64]
         self.backend = make_layers(self.backend_feat, in_channels=512, dilation=True)
@@ -89,8 +86,8 @@ class Network(nn.Module):
 
     def forward(self, samples: NestedTensor):
 
-        features = self.backbone(samples)
-        features_ssn = self.context(features[3])
+        features = self.backbone(samples)[3]
+        features_ssn = self.ssn(features)
         features_att = self.att(features)
         cnn_out = (features_ssn * features_att) + features
         features_de = self.backend(cnn_out)
@@ -109,19 +106,17 @@ class SetCriterion(nn.Module):
         output = outputs.squeeze()
         batch_size = output.size(0)
         for i in range(batch_size):
-            loss = self.loss_density(output[i], targets[i])
+            loss = self.den_loss(output[i], targets[i])
             losses += loss
         # loss_den = losses/(batch_size)
         loss_den = losses / (2 * batch_size)
         return loss_den
 
 
-
-# create the P2PNet model
-def build_model(args, training):
+def build_network(args, training):
 
     backbone = build_backbone(args)
-    model = Network(backbone, args.row, args.line)
+    model = Network(backbone)
     if not training:
         return model
 

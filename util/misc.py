@@ -159,7 +159,7 @@ def reduce_dict(input_dict, average=True):
     return reduced_dict
 
 
-class MetricLogger(object):
+class MetricLogger(object):  # 為了弄成日誌
     def __init__(self, delimiter="\t"):
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
@@ -275,7 +275,7 @@ def collate_fn(batch):
     return tuple(batch)
 
 def collate_fn_crowd(batch):
-    # re-organize the batch
+    # re-organize the batch (P2P)
     batch_new = []
     for b in batch:
         imgs, points = b
@@ -287,6 +287,19 @@ def collate_fn_crowd(batch):
     batch = list(zip(*batch))
     batch[0] = nested_tensor_from_tensor_list(batch[0])
     return tuple(batch)
+
+    # # re-organize the batch (density)
+    # batch_new = []
+    # for b in batch:
+    #     imgs, points = b
+    #     if imgs.ndim == 3:
+    #         imgs = imgs.unsqueeze(0)
+    #     for i in range(len(imgs)):
+    #         batch_new.append((imgs[i, :, :, :], points[i]))
+    # batch = batch_new
+    # batch = list(zip(*batch))
+    # batch[0] = nested_tensor_from_tensor_list(batch[0])
+    # return tuple(batch)
 
 
 def _max_by_axis(the_list):
@@ -316,10 +329,11 @@ def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
     if tensor_list[0].ndim == 3:
 
         # TODO make it support different-sized images
-        max_size = _max_by_axis_pad([list(img.shape) for img in tensor_list])
+        # max_size = _max_by_axis_pad([list(img.shape) for img in tensor_list])
         # min_size = tuple(min(s) for s in zip(*[img.shape for img in tensor_list]))
-        batch_shape = [len(tensor_list)] + max_size
-        b, c, h, w = batch_shape
+        # batch_shape = [len(tensor_list)] + max_size
+        # b, c, h, w = batch_shape
+        batch_shape = [len(tensor_list), tensor_list[0].shape[0], tensor_list[0].shape[1], tensor_list[0].shape[2]]
         dtype = tensor_list[0].dtype
         device = tensor_list[0].device
         tensor = torch.zeros(batch_shape, dtype=dtype, device=device)
